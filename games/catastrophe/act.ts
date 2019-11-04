@@ -10,21 +10,26 @@ import { Job } from "./job";
 export async function moveAndRestAndConvert(unit: Unit, targets: Unit[]): Promise<void> {
     await moveAndRest(unit, AI.Jobs.missionary.actionCost);
 
-    const goalTiles = _.flatMap(targets, t => getSquareNeighbors(t.tile));
-    await move(unit, tilesToIsGoal(goalTiles));
+    const convertTargets = targets.filter(t => canConvert(unit, t, false));
+    await move(unit, tilePredicate(_.flatMap(convertTargets, t => t.tile!.getNeighbors())));
 
-    await convert(unit, targets);
+    await convert(unit, convertTargets);
 }
 
 export async function moveAndRestAndChangeJob(unit: Unit, job: Job): Promise<void> {
     await moveAndRest(unit, AI.Jobs.missionary.actionCost);
 
     const catTile = unit.owner!.cat.tile;
-    await move(unit, tilesToIsGoal(getSquareNeighbors(catTile)));
+    await move(unit, tilePredicate(getSquareNeighbors(catTile)));
 
     if (canChangeJob(unit, job)) {
-        unit.changeJob(job.title as any);
+        await unit.changeJob(job.title as any);
     }
+}
+
+export async function moveToAndRest(unit: Unit, isGoal: (tile: Tile) => boolean): Promise<void> {
+    await moveAndRest(unit, AI.Jobs.missionary.actionCost);
+    await move(unit, isGoal);
 }
 
 export async function moveAndRest(unit: Unit, energyNeeded: number = 100): Promise<void> {
@@ -33,7 +38,7 @@ export async function moveAndRest(unit: Unit, energyNeeded: number = 100): Promi
     }
 
     const restTiles = _.flatMap(getStructures(unit.owner, "shelter"), s => getSquareNeighbors(s.tile));
-    await move(unit, tilesToIsGoal(restTiles));
+    await move(unit, tilePredicate(restTiles));
 
     if (canRest(unit)) {
         await unit.rest();
@@ -70,6 +75,14 @@ export function getMoveablePath(starts: Tile[], isGoal: (tile: Tile) => boolean)
     return search.path;
 }
 
+export function getNearestPair(units: Unit[], isGoal: (tile: Tile) => boolean): [Unit, Tile] | null {
+    const path = getMoveablePath(units.map(u => u.tile!), isGoal);
+    if (path.length == 0) {
+        return null;
+    }
+    return [path[0].unit!, path[path.length - 1]];
+}
+
 export function getStructures(owner: Player | undefined, type: Structure["type"]): Structure[] {
     return AI.Game.structures.filter(s => s.owner === owner && s.type === type && s.tile != null);
 }
@@ -92,7 +105,7 @@ export function getSquareNeighbors(tile: Tile | undefined): Tile[] {
     return neighbors.filter(n => n != undefined) as Tile[];
 }
 
-export function tilesToIsGoal(tiles: Iterable<Tile>): (tile: Tile) => boolean {
+export function tilePredicate(tiles: Iterable<Tile>): (tile: Tile) => boolean {
     const tileSet = new Set(tiles);
     return tileSet.has.bind(tileSet);
 }
@@ -117,11 +130,11 @@ export function canChangeJob(unit: Unit, job: Job): boolean {
         unit.job != job &&
         unit.job !== AI.Jobs["cat overlord"] &&
         unit.energy >= 100 &&
-        getSquareNeighbors(unit.owner!.cat.tile!).includes(unit.tile!)
+        isInSquareRadius(unit.owner!.cat.tile!, unit.tile!, 1)
     );
 }
 
-export function canConvert(unit: Unit, target: Unit): boolean {
+export function canConvert(unit: Unit, target: Unit, checkRange: boolean = true): boolean {
     if (unit.job !== AI.Jobs.missionary || !canAct(unit)) {
         return false;
     }
@@ -130,5 +143,17 @@ export function canConvert(unit: Unit, target: Unit): boolean {
         return false;
     }
 
-    return unit.tile!.hasNeighbor(target.tile);
+    return !checkRange || unit.tile!.hasNeighbor(target.tile);
+}
+
+export function isInSquareRadius(tile1: Tile, tile2: Tile, radius: number): boolean {
+    if (tile1.x - tile2.x > radius || tile2.x - tile1.x > radius) {
+        return false;
+    }
+
+    return !(tile1.y - tile2.y > radius || tile2.y - tile1.y > radius);
+}
+
+export function isInStepRange(tile1: Tile, tile2: Tile, moves: number): boolean {
+    return Math.abs(tile1.x - tile2.x) + Math.abs(tile1.y - tile2.y) <= moves;
 }

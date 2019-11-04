@@ -137,7 +137,7 @@ export class Tile extends GameObject {
             this.tileNorth === tile ||
             this.tileEast === tile ||
             this.tileSouth === tile ||
-            this.tileEast === tile),
+            this.tileWest === tile),
         );
     }
     // <<-- Creer-Merge: functions -->>

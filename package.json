@@ -30,6 +30,7 @@
     "lint:all": "tslint --config tslint.json --project tsconfig.json",
     "lint": "tslint -c tslint.json 'games/**/*.ts'",
     "start": "node dist/",
-    "test": "npm run build && npm run lint"
+    "test": "npm run build && npm run lint",
+    "run123": "node dist/index.js Catastrophe -s localhost:3000 -r 123"
   }
 }
