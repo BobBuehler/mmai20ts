@@ -1,9 +1,12 @@
 // This is where you build your AI for the Catastrophe game.
 
+import * as _ from "lodash";
 import { BaseAI } from "../../joueur/base-ai";
 import { Game } from "./game";
 import { Player } from "./player";
 import { Tile } from "./tile";
+import { Job } from "./job";
+import * as act from "./act";
 
 // <<-- Creer-Merge: imports -->>
 // any additional imports you want can be required here safely between creer runs
@@ -14,6 +17,10 @@ import { Tile } from "./tile";
  * This is where you should build your AI.
  */
 export class AI extends BaseAI {
+    static Game: Game;
+    static Jobs: Record<Job["title"], Job>;
+    static Tiles: Tile[];
+
     /**
      * The reference to the Game instance this AI is playing.
      */
@@ -41,7 +48,10 @@ export class AI extends BaseAI {
      */
     public async start(): Promise<void> {
         // <<-- Creer-Merge: start -->>
-        // pass
+        AI.Game = this.game;
+        AI.Jobs = _.keyBy(this.game.jobs, "title") as any;
+        AI.Tiles = Array(this.game.tiles.length);
+        this.game.tiles.forEach(t => (AI.Tiles[t.y * this.game.mapWidth + t.x] = t));
         // <<-- /Creer-Merge: start -->>
     }
 
@@ -73,73 +83,18 @@ export class AI extends BaseAI {
     public async runTurn(): Promise<boolean> {
         // <<-- Creer-Merge: runTurn -->>
         // Put your game logic here for runTurn
-        return false;
-        // <<-- /Creer-Merge: runTurn -->>
-    }
-
-    /**
-     * A very basic path finding algorithm (Breadth First Search) that when
-     * given a starting Tile, will return a valid path to the goal Tile.
-     *
-     * @param start - the starting Tile.
-     * @param goal - the goal Tile.
-     * @returns An array of Tiles representing the path, with
-     * the first element being a valid adjacent Tile to the start, and the last
-     * element being the goal.
-     */
-    protected findPath(start: Tile | undefined, goal: Tile | undefined): Tile[] {
-        if (start === goal || !start || !goal) {
-            // no need to make a path to here...
-            return [];
-        }
-
-        // queue of the tiles that will have their neighbors searched for 'goal'
-        const fringe: Tile[] = [];
-
-        // How we got to each tile that went into the fringe.
-        const cameFrom = new Map<Tile, Tile>();
-
-        // Enqueue start as the first tile to have its neighbors searched.
-        fringe.push(start);
-
-        // keep exploring neighbors of neighbors... until there are no more.
-        while (fringe.length > 0) {
-            // the tile we are currently exploring.
-            let inspect = fringe.shift() as Tile;
-
-            // cycle through the tile's neighbors.
-            for (const neighbor of inspect.getNeighbors()) {
-                // if we found the goal, we have the path!
-                if (neighbor === goal) {
-                    // Follow the path backward to the start from the goal and
-                    // return it.
-                    const path = [goal];
-
-                    // Starting at the tile we are currently at, insert them
-                    // retracing our steps till we get to the starting tile
-                    while (inspect !== start) {
-                        path.unshift(inspect);
-                        inspect = cameFrom.get(inspect) as Tile;
-                    }
-
-                    return path;
-                }
-                // else we did not find the goal, so enqueue this tile's
-                // neighbors to be inspected
-
-                // if the tile exists, has not been explored or added to the
-                // fringe yet, and it is pathable
-                if (neighbor && neighbor.id && !cameFrom.get(neighbor) && neighbor.isPathable()) {
-                    // add it to the tiles to be explored and add where it came
-                    // from for path reconstruction.
-                    fringe.push(neighbor);
-                    cameFrom.set(neighbor, inspect);
-                }
+        console.log("Turn", this.game.currentTurn);
+        for (const unit of this.player.units) {
+            if (unit.job === AI.Jobs["fresh human"]) {
+                await act.moveAndRestAndChangeJob(unit, AI.Jobs.missionary);
+            }
+            if (unit.job === AI.Jobs.missionary) {
+                await act.moveAndRestAndConvert(unit, this.game.units.filter(u => u.job === AI.Jobs["fresh human"] && u.owner == null));
             }
         }
 
-        // if we got here, no path was found
-        return [];
+        return true;
+        // <<-- /Creer-Merge: runTurn -->>
     }
 
     // <<-- Creer-Merge: functions -->>

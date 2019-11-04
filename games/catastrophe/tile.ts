@@ -124,7 +124,7 @@ export class Tile extends GameObject {
      */
     public isPathable(): boolean {
         // <<-- Creer-Merge: is-pathable-builtin -->>
-        return false; // DEVELOPER ADD LOGIC HERE
+        return this.unit == null && (this.structure == null || this.structure.type == "road" || this.structure.type == "shelter")
         // <<-- /Creer-Merge: is-pathable-builtin -->>
     }
 

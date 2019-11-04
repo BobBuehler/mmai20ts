@@ -89,7 +89,7 @@ export class BaseGameManager {
             }
         }
 
-        for (const [key, d] of Object.entries(delta)) {
+        for (const [key, d] of Object.entries<any>(delta)) {
             let stateKey: any = key;
             if (deltaLength !== undefined) {
                 stateKey = Number(key);
