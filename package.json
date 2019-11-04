@@ -1,0 +1,33 @@
+{
+  "name": "joueur.ts",
+  "version": "1.0.0",
+  "description": "TypeScript client for the Cerveau game server.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/siggame/Joueur.ts"
+  },
+  "engines": {
+    "node": ">=10.0.0"
+  },
+  "private": true,
+  "dependencies": {
+    "@cadre/ts-utils": "1.0.5",
+    "@types/argparse": "1.0.35",
+    "@types/node": "10.12.5",
+    "argparse": "1.0.10",
+    "chalk": "2.4.1",
+    "shx": "0.3.2",
+    "tslint": "5.11.0",
+    "typescript": "3.1.6",
+    "typedoc": "0.13.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "shx rm -rf ./dist ./node_modules",
+    "lint:all": "tslint --config tslint.json --project tsconfig.json",
+    "lint": "tslint -c tslint.json 'games/**/*.ts'",
+    "start": "node dist/",
+    "test": "npm run build && npm run lint"
+  }
+}

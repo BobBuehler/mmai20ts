@@ -1,0 +1,17 @@
+{
+    "extends": [
+        "tslint:recommended",
+        "@cadre/ts-utils/tslint.json"
+        // feel free to add or remove any linter rule sets you want
+    ],
+    "rules": {
+        // feel free to add or change any rules you desire.
+    },
+    "linterOptions": {
+        "exclude": [
+            // Ignore all the typescript files we made so you don't have to
+            // correct our linter errors you define above
+            "joueur/*"
+        ]
+    }
+}
